@@ -1,0 +1,66 @@
+name: "opt_125m"
+platform: "ensemble"
+max_batch_size : 32
+
+
+
+#input to the model 
+input [
+{
+    name: "TEXT"
+    data_type: TYPE_STRING
+    dims: [ -1 ] 
+    # -1 means dynamic axis, aka this dimension may change 
+}
+]
+
+#output of the model
+output {
+    name: "LOGITS"
+    data_type: TYPE_FP32
+    dims: [ 2 ] 
+    # two dimensional tensor, where 1st dimension: batch-size, 2nd dimension: #classes
+}
+
+#Type of scheduler to be used
+ensemble_scheduling {
+    step [
+        {
+            model_name: "opt_125m_tokenizer"
+            model_version: -1
+            input_map {
+            key: "text"
+            value: "TEXT"
+        }
+        output_map [
+        {
+            key: "input_ids"
+            value: "INPUT_IDS"
+        },
+        {
+            key: "attention_mask"
+            value: "ATTENTION_MASK"
+        }
+        ]
+        },
+        {
+            model_name: "opt_125m_model"
+            model_version: -1
+        input_map [
+            {
+                key: "input_ids"
+                value: "INPUT_IDS"
+            },
+            {
+                key: "attention_mask"
+                value: "ATTENTION_MASK"
+            }
+        ]
+        output_map {
+                key: "logits"
+                value: "LOGITS"
+            }
+        }
+    ]
+}
+version_policy{all {} }

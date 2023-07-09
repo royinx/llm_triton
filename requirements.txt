@@ -1,0 +1,9 @@
+torch
+onnx
+onnxruntime
+onnxruntime-tools
+transformers[torch]
+bitsandbytes
+scipy
+optimum[exporters]
+sentencepiece

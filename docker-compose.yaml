@@ -1,0 +1,47 @@
+version: "2.3"
+
+services:
+    trtis:
+        container_name: triton
+        build: 'triton-server/'
+        # image: "nvcr.io/nvidia/tritonserver:23.06-py3"
+        runtime: nvidia
+        hostname: trtis
+        restart: always
+
+        oom_kill_disable: true
+        privileged: true
+        tty: true
+        volumes:
+            - ./models:/models
+
+        expose:
+            - "8000-8002"
+                
+        command: ["tritonserver","--model-store=/models"]
+
+        networks:
+            - back-tier
+
+    controller:
+        container_name: controller
+        # build: 'client/'
+        image: "nvcr.io/nvidia/tritonserver:23.06-py3-sdk"
+        restart: always
+        depends_on:
+            trtis:
+                condition: service_started
+
+        oom_kill_disable: true
+        privileged: true
+        tty: true
+        volumes:
+            - ./client:/demo
+        working_dir: /demo
+
+        networks:
+            - back-tier
+
+networks:
+    back-tier:
+        driver: bridge
