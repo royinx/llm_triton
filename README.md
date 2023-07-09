@@ -21,9 +21,13 @@ trtexec --onnx=opt_125m/model.onnx \
         --maxShapes=input_ids:32x512,attention_mask:32x512 \
         --memPoolSize=workspace:2048 \
         --fp16
-mv opt_125m/model.plan models/opt_125m_model/1/ # for TensorRT
-mv opt_125m/config.json models/opt_125m_tokenizer/1/ # for Tokenizer
-mv opt_125m/tokenizer.json models/opt_125m_tokenizer/1/ # for Tokenizer
+
+# Copy model to TRITON
+mv opt_125m/model.plan models/opt_125m_model/1/
+
+# Copy Tokenizer to TRITON
+mv opt_125m/config.json models/opt_125m_tokenizer/1/
+mv opt_125m/tokenizer.json models/opt_125m_tokenizer/1/
 ```
 
 
@@ -68,14 +72,14 @@ perf_analyzer -m opt_125m_model -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -
 perf_analyzer -m opt_125m -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape TEXT:1
 
 # HTTP Inference client
-python3 send_request.py -u triton:8000 --batch_size 1 --n_iter 4 --statistics -m opt_125m_tokenizer -i text -o input_ids:attention_mask
-python3 send_request.py -u triton:8000 --batch_size 1 --n_iter 4 --statistics -m opt_125m -i TEXT -o LOGITS
+python3 send_request.py -u triton:8000 -m opt_125m_tokenizer -i text -o input_ids:attention_mask --statistics # Tokenizer
+python3 send_request.py -u triton:8000 -m opt_125m -i TEXT -o LOGITS --statistics  # Ensemble
 ```
 
 ---
 
 ### TODO
 
-[] [fastertransformer_backend](https://github.com/triton-inference-server/fastertransformer_backend)
+- [ ] [fastertransformer_backend](https://github.com/triton-inference-server/fastertransformer_backend)
 
-[] gRPC inference client
+- [ ] gRPC inference client
