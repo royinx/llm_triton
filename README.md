@@ -18,7 +18,7 @@ Choose `ONLY ONE` of the following model and execute
 
 #### Hugging Face -> Pytorch -> ONNX
 
-<details><summary> :heavy_check_mark: 1. Sequence Classifier</summary>
+<details><summary> 1. Sequence Classifier</summary>
 
 ```bash
 export SRC_DIR=model_zoo/opt_125m_SeqCls
@@ -29,7 +29,7 @@ python3 transform.py SeqCls
 </details>
 
 
-<details><summary> :white_check_mark: 2. encode ( transformers.onnx )</summary>
+<details><summary> 2. encode ( transformers.onnx )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_tran_onnx/
@@ -39,7 +39,7 @@ python -m transformers.onnx --model=deepset/roberta-base-squad2 $SRC_DIR
 
 </details>
 
-<details><summary> :heavy_check_mark: 3. QA ( optimu-cli )</summary>
+<details><summary> 3. QA ( optimu-cli )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_qa/
@@ -51,7 +51,7 @@ optimum-cli export onnx --framework pt \
 ```
 </details>
 
-<details><summary> :x: 4. T5 ( NNDF )</summary>
+<!-- <details><summary> 4. T5 ( NNDF )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/T5/
@@ -65,7 +65,7 @@ python3 transform.py t5
 ```bash
 python3 transform.py CausalLM
 ```
-</details>
+</details> -->
 
 
 
@@ -312,6 +312,7 @@ python3 send_request.py -u triton:8000 -m opt_125m -i TEXT -o LOGITS --statistic
 
 
 ### TODO
+- [ ] T5
 
 - [ ] logits to text ( QA )
 
