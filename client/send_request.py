@@ -12,6 +12,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', action="store_true", required=False, default=False,
                         help='Enable verbose output')
+    parser.add_argument('--batch_size', type=int, required=False, default=1,
+                        help='Batch size')
     parser.add_argument('-u', '--url', type=str, required=False, default='localhost:8001',
                         help='Inference server URL. Default is localhost:8001.')
     parser.add_argument('-m', '--model_name', type=str, required=False, default="dali_backend",
@@ -46,7 +48,7 @@ def main():
         triton_client = client.InferenceServerClient(url=FLAGS.url,
                                                      verbose=FLAGS.verbose)
     except Exception as e:
-        print("channel creation failed: " + str(e))
+        print("[ FAIL ] - channel creation failed: " + str(e))
         sys.exit()
 
 
@@ -54,9 +56,9 @@ def main():
     model_version = -1
 
     # create raw data
-    print("Loading input")
-    text_data = ["Hello, I'm Machine Learning Engineer, my duty is "]*32
-    batch = string_to_np(text_data).reshape(32,-1)
+    # print("Loading input")
+    text_data = ["Hello, I'm Machine Learning Engineer, my duty is "]*FLAGS.batch_size
+    batch = string_to_np(text_data).reshape(FLAGS.batch_size,-1)
 
     # Initialize the data 
     inputs = generate_inputs(FLAGS.input_name, batch.shape, "BYTES")
@@ -71,20 +73,22 @@ def main():
     outputs = []
     for output_layer_name in FLAGS.output_name.split(":"):
         outputs.append(results.as_numpy(output_layer_name))
-    output0_data = outputs[0]
-    
+
+    # for idx, data in enumerate(outputs):
+    #     print(f"[Output] - {idx} : ",data)
+
     # statistics = triton_client.get_inference_statistics(model_name="opt_125m_tokenizer")
     statistics = triton_client.get_inference_statistics(model_name=FLAGS.model_name)
 
     if len(statistics["model_stats"]) != 1:
-        print("FAILED: Inference Statistics")
+        print("[ FAIL ]: No Inference Statistics")
         sys.exit(1)
     if FLAGS.statistics:
         print(statistics)
 
-    print('PASS: infer')
+    print(f'[ PASS ]: infer - {len(outputs)}, shape: {[x.shape for x in outputs]}')
 
 
 if __name__ == '__main__':
     main()
-    profile.print_stats()
+    # profile.print_stats()

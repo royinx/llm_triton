@@ -1,7 +1,6 @@
-name: "opt_125m"
+name: "llm"
 platform: "ensemble"
-max_batch_size : 32
-
+max_batch_size : 8
 
 
 #input to the model 
@@ -26,7 +25,7 @@ output {
 ensemble_scheduling {
     step [
         {
-            model_name: "opt_125m_tokenizer"
+            model_name: "tokenizer"
             model_version: -1
             input_map {
             key: "text"
@@ -44,7 +43,7 @@ ensemble_scheduling {
         ]
         },
         {
-            model_name: "opt_125m_model"
+            model_name: "model"
             model_version: -1
         input_map [
             {

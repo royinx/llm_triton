@@ -1,0 +1,68 @@
+name: "llm"
+platform: "ensemble"
+max_batch_size : 8
+
+
+#input to the model 
+input [
+    {
+        name: "TEXT"
+        data_type: TYPE_STRING
+        dims: [ -1 ] 
+        # -1 means dynamic axis, aka this dimension may change 
+    }
+]
+
+#output of the model
+output [
+    {
+        name: "HIDDEN_STATE"
+        data_type: TYPE_FP32
+        dims: [ -1, 768 ] 
+    }
+]
+
+#Type of scheduler to be used
+ensemble_scheduling {
+    step [
+        {
+            model_name: "tokenizer"
+            model_version: -1
+            input_map {
+            key: "text"
+            value: "TEXT"
+        }
+        output_map [
+        {
+            key: "input_ids"
+            value: "INPUT_IDS"
+        },
+        {
+            key: "attention_mask"
+            value: "ATTENTION_MASK"
+        }
+        ]
+        },
+        {
+            model_name: "model"
+            model_version: -1
+        input_map [
+            {
+                key: "input_ids"
+                value: "INPUT_IDS"
+            },
+            {
+                key: "attention_mask"
+                value: "ATTENTION_MASK"
+            }
+        ]
+        output_map [
+            {
+                key: "last_hidden_state"
+                value: "HIDDEN_STATE"
+            }
+        ]
+        }
+    ]
+}
+version_policy{all {} }
