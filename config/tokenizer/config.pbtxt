@@ -1,4 +1,4 @@
-name: "opt_125m_tokenizer"
+name: "tokenizer"
 backend: "python"
 max_batch_size : 32
 
@@ -29,6 +29,5 @@ instance_group [
     count: 1
   }
 ]
-
 
 version_policy{all {} }

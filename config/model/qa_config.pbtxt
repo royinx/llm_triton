@@ -1,9 +1,9 @@
-name: "opt_125m_model"
+name: "model"
 platform: "tensorrt_plan"
-max_batch_size : 32
+max_batch_size : 8
 
 dynamic_batching {
-  preferred_batch_size: [ 8, 16, 32 ]
+  preferred_batch_size: [ 1, 4, 8 ]
   max_queue_delay_microseconds: 500
 }
 
@@ -23,9 +23,14 @@ input [
 ]
 output [
   {
-    name: "logits"
+    name: "start_logits"
     data_type: TYPE_FP32
-    dims: [ 2 ]
+    dims: [ -1 ]
+  },
+  {
+    name: "end_logits"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
   }
 ]
 
