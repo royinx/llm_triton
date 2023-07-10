@@ -2,5 +2,4 @@
 *.plan
 *.ipynb*
 __pycache__
-todo
-opt_125m
+*.pyc

@@ -25,8 +25,8 @@ services:
 
     controller:
         container_name: controller
-        # build: 'client/'
-        image: "nvcr.io/nvidia/tritonserver:23.06-py3-sdk"
+        build: 'client/'
+        # image: "nvcr.io/nvidia/tritonserver:23.06-py3-sdk"
         restart: always
         depends_on:
             trtis:
