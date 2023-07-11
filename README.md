@@ -1,13 +1,13 @@
 # LLM in Triton
 
-[**IMPORTANT**](https://github.com/microsoft/onnxruntime/issues/10905#issuecomment-1072649358): ONNX optimization in not applicable on TensorRT compilation, prefer original ONNX 
+[**IMPORTANT**](https://github.com/microsoft/onnxruntime/issues/10905#issuecomment-1072649358): ONNX optimization in not applicable on TensorRT compilation, prefer original ONNX
 
 Platform: 3950x + 32GB + 2080ti (11GB)
 
 ### 0. Build Env
 ```bash
 # Create Triton IS
-docker-compose build 
+docker-compose build
 docker build -t llm_trt_exporter .
 docker run --rm -it -v $PWD:/py -w /py --runtime nvidia llm_trt_exporter bash
 ```
@@ -71,7 +71,7 @@ python3 transform.py CausalLM
 
 
 
-#### 1.2 .ONNX -> TensorRT 
+#### 1.2 .ONNX -> TensorRT
 ```bash
 trtexec --onnx=$SRC_DIR/model.onnx \
         --saveEngine=$SRC_DIR/model.plan \
@@ -116,7 +116,7 @@ docker exec -it controller sh -c "python3 send_request.py -u triton:8000 --batch
 ```
 <details><summary> Manual test </summary>
 
-#### 
+####
 ```bash
 docker exec -it controller bash
 # testing / benchmark
@@ -126,7 +126,7 @@ perf_analyzer -m llm -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --st
 
 # HTTP Inference client
 python3 send_request.py -u triton:8000 -m tokenizer -i text -o input_ids:attention_mask --statistics # Tokenizer
-python3 send_request.py -u triton:8000 -m llm -i TEXT -o LOGITS --statistics  # Ensemble 
+python3 send_request.py -u triton:8000 -m llm -i TEXT -o LOGITS --statistics  # Ensemble
 # output layer = seqcls - LOGITS
 #                    QA - START_LOGITS:END_LOGITS
 #                encode - HIDDEN_STATES
@@ -144,7 +144,7 @@ sudo sh unittest.sh
 ```
 
 
-<!-- 
+<!--
 ---
 
 <details><summary> :white_check_mark: 2. QA ( transformers.onnx )</summary>
@@ -176,7 +176,7 @@ mv model_zoo/squad2_tran_onnx/tokenizer.json      model_repository/models_qa/squ
 
 ### 2.2. Setup Triton IS
 ```bash
-# make sure last docker-compose is down  and changes to new volume 
+# make sure last docker-compose is down  and changes to new volume
 docker-compose up
 ```
 
@@ -232,7 +232,7 @@ mv model_zoo/squad2_opt//tokenizer.json     model_repository/models_qa/squad2_qa
 
 ### 3.2. Setup Triton IS
 ```bash
-# make sure last docker-compose is down  and changes to new volume 
+# make sure last docker-compose is down  and changes to new volume
 docker-compose up
 ```
 
@@ -290,7 +290,7 @@ mv model_zoo/squad2_torch/tokenizer.json        model_repository/opt_125m_tokeni
 
 ### 4.2. Setup Triton IS
 ```bash
-# make sure last docker-compose is down  and changes to new volume 
+# make sure last docker-compose is down  and changes to new volume
 docker-compose up
 ```
 
@@ -313,6 +313,10 @@ python3 send_request.py -u triton:8000 -m opt_125m -i TEXT -o LOGITS --statistic
 
 ### TODO
 - [ ] T5 (in Progess)
+
+- [ ] General torch.onnx.export for CausalLM (In Progress)
+
+- [ ] New Precision released - [Efficient 4-bit Inference (NF4, FP4)](https://github.com/TimDettmers/bitsandbytes/releases/tag/0.40.0) & [FP4 bitsandbytes colab notebook](https://huggingface.co/blog/4bit-transformers-bitsandbytes)
 
 - [ ] logits to text ( QA )
 
