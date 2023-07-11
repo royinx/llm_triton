@@ -18,7 +18,7 @@ Choose `ONLY ONE` of the following model and execute
 
 #### 1.1. Hugging Face -> Pytorch -> ONNX
 
-<details><summary> a. Sequence Classifier ( optimum )</summary>
+<details open><summary> Sequence Classifier ( optimum )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/opt_125m_SeqCls
@@ -29,7 +29,7 @@ python3 transform.py SeqCls
 </details>
 
 
-<details><summary> b. encode ( transformers.onnx )</summary>
+<details open><summary> encode ( transformers.onnx )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_tran_onnx/
@@ -39,7 +39,7 @@ python -m transformers.onnx --model=deepset/roberta-base-squad2 $SRC_DIR
 
 </details>
 
-<details><summary> c. QA ( optimu-cli )</summary>
+<details open><summary> QA ( optimu-cli )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_qa/
