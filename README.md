@@ -2,6 +2,8 @@
 
 [**IMPORTANT**](https://github.com/microsoft/onnxruntime/issues/10905#issuecomment-1072649358): ONNX optimization in not applicable on TensorRT compilation, prefer original ONNX 
 
+Platform: 3950x + 32GB + 2080ti (11GB)
+
 ### 0. Build Env
 ```bash
 # Create Triton IS
@@ -308,8 +310,6 @@ python3 send_request.py -u triton:8000 -m opt_125m -i TEXT -o LOGITS --statistic
 
 ---
 </details> -->
-
-
 
 ### TODO
 - [ ] T5 (in Progess)
