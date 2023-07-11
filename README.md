@@ -16,9 +16,9 @@ docker run --rm -it -v $PWD:/py -w /py --runtime nvidia llm_trt_exporter bash
 
 Choose `ONLY ONE` of the following model and execute
 
-#### Hugging Face -> Pytorch -> ONNX
+#### 1.1. Hugging Face -> Pytorch -> ONNX
 
-<details><summary> 1. Sequence Classifier</summary>
+<details><summary> a. Sequence Classifier ( optimum )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/opt_125m_SeqCls
@@ -29,7 +29,7 @@ python3 transform.py SeqCls
 </details>
 
 
-<details><summary> 2. encode ( transformers.onnx )</summary>
+<details><summary> b. encode ( transformers.onnx )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_tran_onnx/
@@ -39,7 +39,7 @@ python -m transformers.onnx --model=deepset/roberta-base-squad2 $SRC_DIR
 
 </details>
 
-<details><summary> 3. QA ( optimu-cli )</summary>
+<details><summary> c. QA ( optimu-cli )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_qa/
@@ -69,7 +69,7 @@ python3 transform.py CausalLM
 
 
 
-#### ONNX -> TensorRT 
+#### 1.2 .ONNX -> TensorRT 
 ```bash
 trtexec --onnx=$SRC_DIR/model.onnx \
         --saveEngine=$SRC_DIR/model.plan \
@@ -312,7 +312,7 @@ python3 send_request.py -u triton:8000 -m opt_125m -i TEXT -o LOGITS --statistic
 
 
 ### TODO
-- [ ] T5
+- [ ] T5 (in Progess)
 
 - [ ] logits to text ( QA )
 
