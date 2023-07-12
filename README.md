@@ -55,7 +55,7 @@ optimum-cli export onnx --framework pt \
 
 <details><summary> IV. T5 ( NNDF )</summary>
 
-Check [details](docs.t5.md)
+Check [details](docs/t5.md)
 
 </details>
 
