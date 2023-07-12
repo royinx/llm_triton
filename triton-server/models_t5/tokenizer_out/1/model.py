@@ -30,17 +30,17 @@ class TritonPythonModel:
         responses = [] # 
         for request in requests:
             logits = pb_utils.get_input_tensor_by_name(request, "decoder_hidden_states").as_numpy()
-            decoder_outputs = softmax(logits).argmax(axis=-1)
+            decoder_outputs = softmax(logits)
+            decoder_outputs = decoder_outputs.argmax(axis=-1)
+            
             semantic_outputs = self.tokenizer.batch_decode(decoder_outputs, skip_special_tokens = True)
             
             if isinstance(semantic_outputs, list):
                 semantic_outputs = " ".join(semantic_outputs).strip()
 
-            np_obj = np.array([str(x).encode('utf-8') for x in semantic_outputs], dtype=np.object_) 
-            tensor_input = [pb_utils.Tensor("output", np_obj)]
+            np_obj = np.array([str(x).encode('utf-8') for x in semantic_outputs], dtype=np.bytes_)  # np.object_  , np.bytes_
+            out_tensor = pb_utils.Tensor("output", np_obj)
 
-            inference_response = pb_utils.InferenceResponse(output_tensors=tensor_input)
-            
-            responses.append(inference_response) # append single response per request
+            responses.append(pb_utils.InferenceResponse([out_tensor])) # append single response per request
 
         return responses

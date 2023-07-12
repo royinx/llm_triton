@@ -14,8 +14,8 @@ services:
         privileged: true
         tty: true
         volumes:
-            - ./models:/models
-            # - ./models_t5:/models
+            # - ./triton-server/models:/models
+            - ./triton-server/models_t5:/models
 
         expose:
             - "8000-8002"

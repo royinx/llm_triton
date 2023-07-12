@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import numpy as np
 import triton_python_backend_utils as pb_utils
-from transformers import T5Tokenizer, AutoTokenizer, TensorType
+from transformers import T5Tokenizer, TensorType # , AutoTokenizer
 class TritonPythonModel:
     def initialize(self, args: Dict[str, str]) -> None:
         """
@@ -30,13 +30,10 @@ class TritonPythonModel:
             tokens: Dict[str, np.ndarray] = self.tokenizer(text=query,
                                                            return_tensors=TensorType.NUMPY)
             # tensorrt uses int32 as input type, ort uses int64
-            tokens = {k: v.astype(np.int32) for k, v in tokens.items()}
+            tokens = tokens["input_ids"].astype(np.int32)
             # communicate the tokenization results to Triton server
-            outputs = list()
-            for input_name in self.tokenizer.model_input_names:
-                tensor_input = pb_utils.Tensor(input_name, tokens[input_name])
-                outputs.append(tensor_input)
-            inference_response = pb_utils.InferenceResponse(output_tensors=outputs)
+            tensor_input = pb_utils.Tensor("input_ids", tokens)
+            inference_response = pb_utils.InferenceResponse(output_tensors=[tensor_input])
             responses.append(inference_response)
 
         return responses

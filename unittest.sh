@@ -9,7 +9,8 @@ docker run --rm -it -v $PWD:/py -w /py --runtime nvidia llm_trt_exporter bash -c
 
 sudo chown -R $USER ./*
 
-check (){
+export DST_DIR=triton-server/models
+build_engine (){
         docker-compose down
         docker run --rm -it -v $PWD:/py -w /py --runtime nvidia llm_trt_exporter \
                 trtexec --onnx=$1/model.onnx \
@@ -21,14 +22,14 @@ check (){
                         --fp16
 
         # copy config.pbtxt
-        cp config/ensemble/${2}_config.pbtxt      models/llm/config.pbtxt
-        cp config/model/${2}_config.pbtxt         models/model/config.pbtxt
-        cp config/tokenizer/config.pbtxt                models/tokenizer/config.pbtxt
+        cp config/ensemble/${2}_config.pbtxt      $DST_DIR/llm/config.pbtxt
+        cp config/model/${2}_config.pbtxt         $DST_DIR/model/config.pbtxt
+        cp config/tokenizer/config.pbtxt          $DST_DIR/tokenizer/config.pbtxt
 
         # Copy Model to Triton
-        cp $1/model.plan         models/model/1/          # Copy model to TRITON
-        cp $1/config.json        models/tokenizer/1/      # Copy Tokenizer to TRITON
-        cp $1/tokenizer.json     models/tokenizer/1/      # Copy Tokenizer to TRITON
+        cp $1/model.plan         $DST_DIR/model/1/          # Copy model to TRITON
+        cp $1/config.json        $DST_DIR/tokenizer/1/      # Copy Tokenizer to TRITON
+        cp $1/tokenizer.json     $DST_DIR/tokenizer/1/      # Copy Tokenizer to TRITON
 
         # Create Triton IS
         docker-compose up -d
@@ -37,17 +38,17 @@ check (){
 
 }
 
-check model_zoo/opt_125m_SeqCls seqcls
+build_engine model_zoo/opt_125m_SeqCls seqcls
 docker exec -it controller sh -c "python3 send_request.py -u triton:8000 -m llm -i TEXT -o LOGITS" > log && echo "" >> log
-sh cleanup.sh
+sh cleanup.sh $DST_DIR
 
-check model_zoo/squad2_tran_onnx encode
+build_engine model_zoo/squad2_tran_onnx encode
 docker exec -it controller sh -c "python3 send_request.py -u triton:8000 --batch_size 8 -m llm -i TEXT -o HIDDEN_STATE" >> log  && echo "" >> log
-sh cleanup.sh
+sh cleanup.sh $DST_DIR
 
-check model_zoo/squad2_qa qa
+build_engine model_zoo/squad2_qa qa
 docker exec -it controller sh -c "python3 send_request.py -u triton:8000 --batch_size 8 -m llm -i TEXT -o START_LOGITS:END_LOGITS" >> log  && echo "" >> log
-sh cleanup.sh
+sh cleanup.sh $DST_DIR
 
 docker-compose down
 # # clean up model_zoo

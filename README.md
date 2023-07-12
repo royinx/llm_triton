@@ -6,10 +6,9 @@ Platform: 3950x + 32GB + 2080ti (11GB)
 
 ### 0. Build Env
 ```bash
-# Create Triton IS
-docker-compose build
+# access trt_builder
 docker build -t llm_trt_exporter .
-docker run --rm -it -v $PWD:/py -w /py --runtime nvidia llm_trt_exporter bash
+docker run --rm -it --name trt_builder -v $PWD:/py -w /py --runtime nvidia llm_trt_exporter bash
 ```
 
 ---
@@ -84,16 +83,22 @@ trtexec --onnx=$SRC_DIR/model.onnx \
 ### 2. Setup Triton Inference Server
 
 ```bash
+export DST_DIR=triton-server/models
 # copy config.pbtxt
-cp config/ensemble/${LLMTASK}_config.pbtxt      models/llm/config.pbtxt
-cp config/model/${LLMTASK}_config.pbtxt         models/model/config.pbtxt
-cp config/tokenizer/config.pbtxt                models/tokenizer/config.pbtxt
+cp config/ensemble/${LLMTASK}_config.pbtxt      $DST_DIR/llm/config.pbtxt
+cp config/model/${LLMTASK}_config.pbtxt         $DST_DIR/model/config.pbtxt
+cp config/tokenizer/config.pbtxt                $DST_DIR/tokenizer/config.pbtxt
 
 # Copy Model to Triton
-mv $SRC_DIR/model.plan         models/model/1/          # Copy model to TRITON
-mv $SRC_DIR/*                  models/tokenizer/1/      # Copy Tokenizer to TRITON
+mv $SRC_DIR/model.plan         $DST_DIR/model/1/          # Copy model to TRITON
+mv $SRC_DIR/*                  $DST_DIR/tokenizer/1/      # Copy Tokenizer to TRITON
 
+# Exit trt_builder
+```
+
+```bash
 # Create Triton IS
+docker-compose build
 docker-compose up
 ```
 
@@ -124,8 +129,8 @@ perf_analyzer -m llm -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --st
 python3 send_request.py -u triton:8000 -m tokenizer -i text -o input_ids:attention_mask --statistics # Tokenizer
 python3 send_request.py -u triton:8000 -m llm -i TEXT -o LOGITS --statistics  # Ensemble
 # output layer = seqcls - LOGITS
+#                encode - HIDDEN_STATE
 #                    QA - START_LOGITS:END_LOGITS
-#                encode - HIDDEN_STATES
 ```
 
 </details>
@@ -135,7 +140,7 @@ python3 send_request.py -u triton:8000 -m llm -i TEXT -o LOGITS --statistics  # 
 ### 4. Clean up
 ```bash
 # clean up Triton
-sh cleanup.sh
+sh cleanup.sh triton-server/models
 sudo sh unittest.sh
 ```
 
