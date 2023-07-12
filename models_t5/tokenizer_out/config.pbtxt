@@ -1,0 +1,28 @@
+name: "tokenizer_out"
+backend: "python"
+max_batch_size : 32
+
+input [
+  {
+    name: "decoder_hidden_states"
+    data_type: TYPE_FP32
+    dims: [ -1 , 32128 ]
+  }
+]
+
+output [
+  {
+    name: "output"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+instance_group [
+  {
+    kind: KIND_CPU
+    count: 1
+  }
+]
+
+version_policy{all {} }

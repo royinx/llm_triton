@@ -8,16 +8,18 @@ services:
         runtime: nvidia
         hostname: trtis
         restart: always
+        shm_size: '5gb'
 
         oom_kill_disable: true
         privileged: true
         tty: true
         volumes:
             - ./models:/models
+            # - ./models_t5:/models
 
         expose:
             - "8000-8002"
-                
+        
         command: ["tritonserver","--model-store=/models"]
 
         networks:
