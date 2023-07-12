@@ -43,8 +43,9 @@ def export_t5(model_checkpoint, save_directory) -> None:
 
     if not os.path.exists(os.path.join( save_directory , "encoder")): os.makedirs(os.path.join( save_directory, "encoder"))
     if not os.path.exists(os.path.join( save_directory , "decoder")): os.makedirs(os.path.join( save_directory, "decoder"))
-    encoder_onnx_model_fpath = os.path.join( save_directory , "encoder", "encoder.onnx")
-    decoder_onnx_model_fpath = os.path.join( save_directory , "decoder", "decoder-with-lm-head.onnx")
+    if not os.path.exists(os.path.join( save_directory , "config")):  os.makedirs(os.path.join( save_directory, "config"))
+    encoder_onnx_model_fpath = os.path.join( save_directory , "encoder", "model.onnx") # encoder.onnx
+    decoder_onnx_model_fpath = os.path.join( save_directory , "decoder", "model.onnx") # decoder-with-lm-head.onnx
 
     t5_encoder = T5EncoderTorchFile(model, metadata)
     t5_decoder = T5DecoderTorchFile(model, metadata)
@@ -54,6 +55,7 @@ def export_t5(model_checkpoint, save_directory) -> None:
 
     onnx_t5_decoder = t5_decoder.as_onnx_model(decoder_onnx_model_fpath, force_overwrite=False)
     print(decoder_onnx_model_fpath)
+    tokenizer.save_pretrained(os.path.join( save_directory, "config"))
     print("Done!")
 
 def export_CausalLM(model_checkpoint, save_directory) -> None:
