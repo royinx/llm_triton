@@ -148,6 +148,8 @@ sudo sh unittest.sh
 ### TODO
 - [x] T5
 
+- [ ] T5 tensor validation. (In Progress)
+
 - [ ] General torch.onnx.export for CausalLM (In Progress)
 
 - [ ] New Precision released - [Efficient 4-bit Inference (NF4, FP4)](https://github.com/TimDettmers/bitsandbytes/releases/tag/0.40.0) & [FP4 bitsandbytes colab notebook](https://huggingface.co/blog/4bit-transformers-bitsandbytes)
