@@ -58,12 +58,13 @@ Check [details](docs/t5.md)
 
 </details>
 
-<!-- <details><summary> :x: 5. CausalLM ( torch.onnx.export )</summary>
+<details><summary> V. CausalLM ( torch.onnx.export )</summary>
 
+> :x: Still in progress
 ```bash
 python3 transform.py CausalLM
 ```
-</details> -->
+</details>
 
 
 
