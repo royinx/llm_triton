@@ -1,0 +1,113 @@
+name: CICD
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - development
+      - "feature/**"
+
+jobs:
+  commit_filter:
+    name: Filter Commit
+    runs-on: ubuntu-latest
+    if: "contains(github.ref, 'main') || !contains(github.event.head_commit.message, 'skip ci')"
+    steps:
+      - name: Echo the greeting
+        run: echo 'CI/CD triggered.'
+  # check_code:
+  #   name: Code Checking
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name != 'push'
+  #   needs: [commit_filter]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: true
+  #         token: ${{ secrets.CICD_CREDENTIALS }}
+  #     - name: Setup Docker build kit
+  #       uses: docker/setup-buildx-action@v2
+  #       with:
+  #         version: latest
+  #     - name: Build and test image
+  #       id: build_image
+  #       run: |
+  #         # Build, test a docker container
+  #         docker buildx build --load --tag linting_machine .
+  #         docker run -t --rm --entrypoint bash linting_machine -c "pip install pylint==2.13.0 && pylint --rcfile=lintrc/pylintrc *.py"
+  build_image:
+    name: Build & Push Container - Docker Hub
+    needs: [commit_filter]
+    if: github.event_name == 'push' && (contains(github.ref, 'main') || contains(github.ref, 'development') || contains(github.ref, 'feature'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          token: ${{ secrets.CICD_CREDENTIALS }}
+
+      # - name: Setup Docker build kit
+      #   uses: crazy-max/ghaction-docker-buildx@v1
+      #   with:
+      #     version: latest
+
+      # - name: Log in to Docker Hub
+      #   uses: docker/login-action@v2
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # - name: Extract metadata (tags, labels) for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@v4
+      #   with:
+      #     images: ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      #     flavor: latest=auto
+
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: true
+      #     tags: ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest # ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
+      #     cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:buildcache
+      #     cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:buildcache,mode=max
+
+      - if: success()
+        name: Notify Deployment
+        uses: rtCamp/action-slack-notify@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: ${{ github.repository	}}
+          SLACK_ICON: https://github.com/royinx.png?size=48
+          SLACK_TITLE: "New Version Deployed :rocket:"
+          SLACK_MESSAGE: "New Version has been deployed for Development. Check out the cool new features :rocket:"
+
+      # - name: Docker Hub Description
+      #   uses: peter-evans/dockerhub-description@v3
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
+      #     repository: ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
+      #     readme-filepath: ./README_DOCKERHUB.md
+  # auto_merge_pr:
+  #   name: Auto Merge Sync Pull Request
+  #   runs-on: ubuntu-latest
+  #   # needs: [check_code]
+  #   if: "contains(github.event.pull_request.title, 'chore: auto sync master with development')"
+  #   steps:
+  #     - name: Auto Review
+  #       uses: andrewmusgrave/automatic-pull-request-review@0.0.2
+  #       with:
+  #         repo-token: "${{ secrets.CICD_CREDENTIALS }}"
+  #         event: APPROVE
+  #         body: "Auto Review by Ultron"
+  #     - name: Auto Merge Sync PR
+  #       uses: "pascalgn/automerge-action@4536e8847eb62fe2f0ee52c8fa92d17aa97f932f"
+  #       env:
+  #         GITHUB_TOKEN: "${{ secrets.CICD_CREDENTIALS }}"
+  #         MERGE_LABELS: ""
+  #         MERGE_METHOD: "merge"

@@ -17,9 +17,9 @@ docker run --rm -it --name trt_builder -v $PWD:/py -w /py --runtime nvidia llm_t
 
 Choose `ONLY ONE` of the following model and execute
 
-#### 1.1. Hugging Face -> Pytorch -> ONNX
+#### Hugging Face -> Pytorch -> ONNX
 
-<details open><summary> I. Sequence Classifier ( optimum )</summary>
+<details open><summary> A. Sequence Classifier ( optimum )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/opt_125m_SeqCls
@@ -30,7 +30,7 @@ python3 transform.py SeqCls
 </details>
 
 
-<details><summary> II. encode ( transformers.onnx )</summary>
+<details><summary> B. encode ( transformers.onnx )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_tran_onnx/
@@ -40,7 +40,7 @@ python -m transformers.onnx --model=deepset/roberta-base-squad2 $SRC_DIR
 
 </details>
 
-<details><summary> III. QA ( optimu-cli )</summary>
+<details><summary> C. QA ( optimu-cli )</summary>
 
 ```bash
 export SRC_DIR=model_zoo/squad2_qa/
@@ -52,13 +52,13 @@ optimum-cli export onnx --framework pt \
 ```
 </details>
 
-<details><summary> IV. T5 ( NNDF )</summary>
+<details><summary> D. T5 ( NNDF )</summary>
 
 Check [details](docs/t5.md)
 
 </details>
 
-<details><summary> V. CausalLM ( torch.onnx.export )</summary>
+<details><summary> E. CausalLM ( torch.onnx.export )</summary>
 
 > :x: Still in progress
 ```bash
@@ -66,9 +66,9 @@ python3 transform.py CausalLM
 ```
 </details>
 
+---
 
-
-#### 1.2 .ONNX -> TensorRT
+#### ONNX -> TensorRT
 ```bash
 trtexec --onnx=$SRC_DIR/model.onnx \
         --saveEngine=$SRC_DIR/model.plan \
@@ -146,12 +146,184 @@ sudo sh unittest.sh
 ```
 
 
-### TODO
-- [x] T5
+<!--
+---
 
-- [ ] T5 tensor validation. (In Progress)
+<details><summary> :white_check_mark: 2. QA ( transformers.onnx )</summary>
 
-- [ ] General torch.onnx.export for CausalLM (In Progress)
+### 2.1. Build Model (Hugging Face -> Pytorch -> ONNX -> TensorRT)
+
+```bash
+# Hugging Face -> Pytorch -> ONNX
+python -m transformers.onnx --model=deepset/roberta-base-squad2 model_zoo/squad2_tran_onnx/
+
+# ONNX -> TensorRT
+trtexec --onnx=model_zoo/squad2_tran_onnx/model.onnx \
+        --saveEngine=model_zoo/squad2_tran_onnx/model.plan \
+        --minShapes=input_ids:1x1,attention_mask:1x1 \
+        --optShapes=input_ids:4x512,attention_mask:4x512 \
+        --maxShapes=input_ids:8x512,attention_mask:8x512 \
+        --memPoolSize=workspace:2048 \
+        --fp16
+
+# Copy model to TRITON
+mv model_zoo/squad2_tran_onnx/model.plan          model_repository/models_qa/squad2_qa_model/1/
+
+# Copy Tokenizer to TRITON
+mv model_zoo/squad2_tran_onnx/config.json         model_repository/models_qa/squad2_qa_tokenizer/1/
+mv model_zoo/squad2_tran_onnx/tokenizer.json      model_repository/models_qa/squad2_qa_tokenizer/1/
+```
+
+---
+
+### 2.2. Setup Triton IS
+```bash
+# make sure last docker-compose is down  and changes to new volume
+docker-compose up
+```
+
+### 2.3. Client
+
+```bash
+docker exec -it controller bash
+# testing / benchmark
+perf_analyzer -m squad2_qa_tokenizer -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1  --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape text:1
+perf_analyzer -m squad2_qa_model -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --shape input_ids:128 --shape attention_mask:128
+perf_analyzer -m squad2_qa -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape TEXT:1
+
+# HTTP Inference client
+python3 send_request.py -u triton:8000 -m squad2_qa_tokenizer -i text -o input_ids:attention_mask --statistics # Tokenizer
+python3 send_request.py -u triton:8000 -m squad2_qa -i TEXT -o LOGITS --statistics  # Ensemble
+```
+
+---
+</details>
+
+
+<details><summary> :heavy_check_mark: 3. QA ( optimu-cli )</summary>
+
+
+### 3.1. Build Model
+
+
+```bash
+# Hugging Face -> Pytorch -> ONNX
+optimum-cli export onnx --framework pt \
+                        --task question-answering \
+                        --atol 1e-5 \
+                        --model deepset/roberta-base-squad2 model_zoo/squad2_QA/
+
+# ONNX -> TensorRT
+trtexec --onnx=model_zoo/squad2_opt/model.onnx \
+        --saveEngine=model_zoo/squad2_opt//model.plan \
+        --minShapes=input_ids:1x1,attention_mask:1x1 \
+        --optShapes=input_ids:4x512,attention_mask:4x512 \
+        --maxShapes=input_ids:8x512,attention_mask:8x512 \
+        --memPoolSize=workspace:2048 \
+        --fp16
+
+# Copy model to TRITON
+mv model_zoo/squad2_opt//model.plan         model_repository/models_qa/squad2_qa_model/1/
+
+# Copy Tokenizer to TRITON
+mv model_zoo/squad2_opt//config.json        model_repository/models_qa/squad2_qa_tokenizer/1/
+mv model_zoo/squad2_opt//tokenizer.json     model_repository/models_qa/squad2_qa_tokenizer/1/
+```
+
+---
+
+### 3.2. Setup Triton IS
+```bash
+# make sure last docker-compose is down  and changes to new volume
+docker-compose up
+```
+
+### 3.3. Client
+
+```bash
+docker exec -it controller bash
+# testing / benchmark
+perf_analyzer -m squad2_qa_tokenizer -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1  --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape text:1
+perf_analyzer -m squad2_qa_model -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --shape input_ids:128 --shape attention_mask:128
+perf_analyzer -m squad2_qa -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape TEXT:1
+
+# HTTP Inference client
+python3 send_request.py -u triton:8000 --batch_size 8 -m squad2_qa_tokenizer -i text -o input_ids:attention_mask --statistics # Tokenizer
+python3 send_request.py -u triton:8000 --batch_size 8 -m squad2_qa -i TEXT -o START_LOGITS:END_LOGITS  # Ensemble
+```
+
+---
+</details>
+
+
+
+
+
+<details><summary> :white_check_mark: 4. QA ( torch.onnx.export )</summary>
+
+### 4.1. Build Model
+
+```bash
+# Hugging Face -> Pytorch -> ONNX
+python3 transform.py CausalLM
+
+# ONNX -> TensorRT
+trtexec --onnx=model_zoo/squad2_torch/model.onnx \
+        --saveEngine=model_zoo/squad2_torch/model.plan \
+        --minShapes=input_ids:1x1,attention_mask:1x1 \
+        --optShapes=input_ids:4x512,attention_mask:4x512 \
+        --maxShapes=input_ids:8x512,attention_mask:8x512 \
+        --memPoolSize=workspace:2048 \
+        --fp16
+
+# Copy model to TRITON
+mv model_zoo/squad2_torch/model.plan            model_repository/opt_125m_model/1/
+
+# Copy Tokenizer to TRITON
+mv model_zoo/squad2_torch/config.json           model_repository/opt_125m_tokenizer/1/
+mv model_zoo/squad2_torch/tokenizer.json        model_repository/opt_125m_tokenizer/1/
+```
+
+---
+```bash
+# always raise bus error...
+
+```
+
+### 4.2. Setup Triton IS
+```bash
+# make sure last docker-compose is down  and changes to new volume
+docker-compose up
+```
+
+### 4.3. Client
+
+```bash
+docker exec -it controller bash
+# testing / benchmark
+perf_analyzer -m opt_125m_tokenizer -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1  --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape text:1
+perf_analyzer -m opt_125m_model -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --shape input_ids:128 --shape attention_mask:128
+perf_analyzer -m opt_125m -u triton:8000 -i HTTP -v -p3000 -d -l3000 -t1 -c5 -b1 --string-data "Hello, I'm Machine Learning Engineer, my duty is " --shape TEXT:1
+
+# HTTP Inference client
+python3 send_request.py -u triton:8000 -m opt_125m_tokenizer -i text -o input_ids:attention_mask --statistics # Tokenizer
+python3 send_request.py -u triton:8000 -m opt_125m -i TEXT -o LOGITS --statistics  # Ensemble
+```
+
+---
+</details> -->
+
+<details open><summary> Roadmap </summary>
+
+- [ ] *in Progess* - T5
+
+- [ ] *in Progess* - General torch.onnx.export for CausalLM (In Progress)
+
+- [ ] *Token Requested* - Llama 2
+
+- [ ] Llama 2 with FP4 (Possible on OPT but not TensorRT yet)
+
+- [ ] Derived >> Implement OPT backend for Triton
 
 - [ ] New Precision released - [Efficient 4-bit Inference (NF4, FP4)](https://github.com/TimDettmers/bitsandbytes/releases/tag/0.40.0) & [FP4 bitsandbytes colab notebook](https://huggingface.co/blog/4bit-transformers-bitsandbytes)
 
@@ -160,3 +332,5 @@ sudo sh unittest.sh
 - [ ] [fastertransformer_backend](https://github.com/triton-inference-server/fastertransformer_backend)
 
 - [ ] gRPC inference client
+
+</details>
